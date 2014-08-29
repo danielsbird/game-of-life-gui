@@ -10,7 +10,7 @@ describe Game do
 
 	let (:grid) {@game.instance_variable_get(:@grid)}
 	let (:matrix) {@game.instance_variable_get(:@grid).matrix}
-	let (:testPattern) {[[0, 0], [0, 1], [1, 0], [1, 1]]}
+	let (:cell) { @game.getCell(0, 0) }
 
 	subject { @game }
 
@@ -70,9 +70,12 @@ describe Game do
 	end
 
 	describe "#turn" do
+
+		let (:block) {[[14, 14], [14, 0], [0, 14], [0, 0]]}
+
 		context "when no cells are alive" do
 			it "should not set any cells to alive" do
-				@game.instance_eval { turn }
+				@game.turn
 				matrix.each do | row |
 					row.each do | column |
 						expect(column.state).to eq(false)
@@ -81,35 +84,44 @@ describe Game do
 			end
 		end
 
-		# Test when some cells are alive...
-		# Use a mock or stub or deadOrAlive
+		context "when four cells should live" do
+			it "should have four alive cells" do
+				@game.loadPattern(block)
+				@game.turn
+				expect(matrix.count { | cell | cell.state == true}).to eq(4)
+			end
+		end
 	end
 
 	describe "#getCell" do
 		
 		it "should return a Cell" do
-			expect(@game.instance_eval{ getCell(0, 0) }).to be_kind_of(Cell)
+			expect(@game.getCell(0, 0)).to be_kind_of(Cell)
 		end
 
 		it "should have the correct row coordinate" do
-			expect(@game.instance_eval{ getCell(0, 0).row }).to eq(0)
+			expect(@game.getCell(0, 0).row).to eq(0)
 		end
 
 		it "should have the correct column coordinate" do
-			expect(@game.instance_eval{ getCell(0, 0).column }).to eq(0)
+			expect(@game.getCell(0, 0).column).to eq(0)
 		end
 	end
 
 	describe "#deadOrAlive" do
 
+		def set_some_neighbours_alive(cell, numAlive)
+			neighbourList = @game.neighbours(cell)
+			for i in 0...numAlive
+				neighbourList[i].state = true
+			end
+		end
+
 		context "when dead cell has three alive neighbours" do
 			it "should set the dead cell to alive" do
-				matrix[0][1].state = true
-				matrix[1][0].state = true
-				matrix[1][1].state = true
-				cell = @game.instance_eval { getCell(0, 0) }
-				@game.instance_eval{ deadOrAlive(cell) }
-				expect(matrix[0][0].state).to eq(true)
+				set_some_neighbours_alive(cell, 3)
+				@game.deadOrAlive(cell)
+				expect(cell.state).to eq(true)
 			end
 		end
 
@@ -117,42 +129,40 @@ describe Game do
 		# not fail first (since cell is already dead)
 		context "when dead cell has less than three alive neighbours" do
 			it "should not set the dead cell to alive" do
-				matrix[0][1].state = true
-				matrix[1][0].state = true
-				cell = @game.instance_eval { getCell(0, 0) }
-				@game.instance_eval{ deadOrAlive(cell) }
-				expect(matrix[0][0].state).to eq(false)
+				set_some_neighbours_alive(cell, 2)
+				@game.deadOrAlive(cell)
+				expect(cell.state).to eq(false)
 			end
 		end
 
 		context "when alive cell has more than three alive neighbours" do
 			it "should set the alive cell to dead" do
-				matrix[0][1].state = true
-				matrix[1][0].state = true
-				matrix[1][1].state = true
-				matrix[14][14].state = true
-				cell = @game.instance_eval { getCell(0, 0) }
-				matrix[0][0].state = true
-				@game.instance_eval{ deadOrAlive(cell) }
-				expect(matrix[0][0].state).to eq(false)
+				set_some_neighbours_alive(cell, 4)
+				cell.state = true
+				@game.deadOrAlive(cell)
+				expect(cell.state).to eq(false)
 			end
 		end
 
 		context "when alive cell has less than two alive neighbours" do
 			it "should set the alive cell to dead" do
-				matrix[0][1].state = true
-				matrix[0][0].state = true
-				cell = @game.instance_eval { getCell(0, 0) }
-				@game.instance_eval{ deadOrAlive(cell) }
-				expect(matrix[0][0].state).to eq(false)
+				set_some_neighbours_alive(cell, 1)
+				cell.state = true
+				@game.deadOrAlive(cell)
+				expect(cell.state).to eq(false)
 			end
 		end
 	end
 
 	describe "#neighbours" do
 		it "should return coordinates of neighbouring cells" do
-			cell = Cell.new(0, 0, false)
-			expect(@game.instance_eval{ neighbours(cell) }).to include([14, 14], [14, 0], [14, 1], [0, 14], [0, 1], [1, 14], [1, 0], [1, 1])
+			neighbours = @game.neighbours(cell)
+			neighbours.each do | neighbour |
+				x = neighbour.row
+				y = neighbour.column
+				expectedNeighbourCoordinates = [14, 14], [14, 0], [14, 1], [0, 14], [0, 1], [1, 14], [1, 0], [1, 1]
+				expect(expectedNeighbourCoordinates).to include([x, y])
+			end
 		end
 	end
 end
