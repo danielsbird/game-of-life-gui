@@ -13,7 +13,7 @@ class Game
 
 	# Puts a cell in each grid space
 	def populateGrid
-	
+
 		@grid.matrix.each_with_index do | row, i |
 
 			row.each_with_index do | col, j |
@@ -33,11 +33,10 @@ class Game
 			x = @grid.toroidalRow(coordinate[0])
 			y = @grid.toroidalColumn(coordinate[1])
 
-			@grid.matrix[x][y].state = true
+			cell = getCell(x, y)
+			cell.state = true
 		end
 	end
-
-	private
 
 	# Return the cell at the specified row and column coordinates
 	def getCell(row, column)
@@ -45,8 +44,18 @@ class Game
 		return @grid.getElement(row, column)
 	end
 
+	# Iterate over each cell in grid and set to alive or dead conforming
+	# to game rules
 	def turn()
-		# Fill in...
+
+		newGrid = Grid.new(grid.rows, grid.columns)
+		
+		@grid.iterate do | cell |
+			nextState = deadOrAlive(cell)
+			newGrid.matrix[cell.row][cell.column] = Cell.new(cell.row, cell.column, nextState)
+		end
+
+		@grid = newGrid
 	end
 
 	# Set cell state based on number of alive neighbours
@@ -57,10 +66,7 @@ class Game
 		# Count number of living neighbours
 		neighbours(cell).each do | neighbour |
 
-			x = neighbour[0]
-			y = neighbour[1]
-
-			if @grid.matrix[x][y].state
+			if neighbour.state
 
 				livingNeighbours += 1
 			end
@@ -69,17 +75,18 @@ class Game
 		# Dead cells come alive when exactly three adjacent neighbours are alive
 		# Alive cells die without two or three living adjacent neighbours
 		if cell.state == false && livingNeighbours == 3
-			cell.state = true
+			return true
 		elsif cell.state == true && livingNeighbours.between?(2, 3)
-			cell.state = true
+			return true
 		else
-			cell.state = false
+			return false
 		end
+
 	end
 
-	# Return x and y coordinates of all neighbouring cells as an array
+	# Return array of all neighbouring cells
 	def neighbours(cell)
-		
+
 		row = cell.row
 		column = cell.column
 		neighbours = []
@@ -89,7 +96,7 @@ class Game
 			for j in ((column - 1)..(column + 1))
 				# Do not include given cell in sample
 				if !(i == row && j == column)
-					neighbours << @grid.toroidalCoordinates(i, j)
+					neighbours << getCell(i, j)
 				end
 			end
 		end

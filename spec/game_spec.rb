@@ -11,6 +11,7 @@ describe Game do
 	let (:grid) {@game.instance_variable_get(:@grid)}
 	let (:matrix) {@game.instance_variable_get(:@grid).matrix}
 	let (:cell) { @game.getCell(0, 0) }
+	let (:block) {[[14, 14], [14, 0], [0, 14], [0, 0]]}
 
 	subject { @game }
 
@@ -26,10 +27,8 @@ describe Game do
 
 	describe "#populateGrid" do
 		it "should place a Cell in each grid space" do
-			matrix.each do | row |
-				row.each do | column |
-					expect(column).to be_a Cell
-				end
+			grid.iterate do | element |
+				expect(element).to be_a Cell
 			end
 		end
 
@@ -50,19 +49,17 @@ describe Game do
 	describe "#loadPattern" do
 		context "when coordinates supplied are outside the grid" do
 			it "should wrap coordinates" do
-				@game.loadPattern([[grid.rows + 1, grid.columns + 1]])
-				expect(matrix[1][1].state).to eq(true)
+				@game.loadPattern([[grid.rows, grid.columns]])
+				expect(@game.getCell(0, 0).state).to eq(true)
 			end
 		end
 
 		context "when multiple coordinates are supplied" do
 			it "should set each cell to alive" do
-				@game.loadPattern(testPattern)
-				matrix.each_with_index do | row, i |
-					row.each_with_index do | col, j |
-						if testPattern.include? [i, j]
-							expect(matrix[i][j].state).to eq(true)
-						end
+				@game.loadPattern(block)
+				grid.iterate do | cell |
+					if block.include? [cell.row, cell.column]
+						expect(cell.state).to eq(true)
 					end
 				end
 			end
@@ -71,24 +68,39 @@ describe Game do
 
 	describe "#turn" do
 
-		let (:block) {[[14, 14], [14, 0], [0, 14], [0, 0]]}
+		let (:blinker) { [[0, 0], [0, 1], [0, 2]] }
+		let (:unstable) { [[0, 0], [0, 1]] }
 
 		context "when no cells are alive" do
 			it "should not set any cells to alive" do
 				@game.turn
-				matrix.each do | row |
-					row.each do | column |
-						expect(column.state).to eq(false)
-					end
+				grid.iterate do | cell |
+					expect(cell.state).to eq(false)
 				end
 			end
 		end
 
-		context "when four cells should live" do
-			it "should have four alive cells" do
+		context "when pattern is stable" do
+			it "all cells in pattern should live" do
+				count = 0
 				@game.loadPattern(block)
-				@game.turn
-				expect(matrix.count { | cell | cell.state == true}).to eq(4)
+				100.times { @game.turn }
+				grid.iterate do | cell |
+					count += 1 if cell.state
+				end
+				expect(count).to eq(4)
+			end
+		end
+
+		context "when pattern is unstable" do
+			it "all cells in pattern should die" do
+				count = 0
+				@game.loadPattern(unstable)
+				1.times { @game.turn }
+				grid.iterate do | cell |
+					count += 1 if cell.state
+				end
+				expect(count).to eq(0)
 			end
 		end
 	end
@@ -118,20 +130,16 @@ describe Game do
 		end
 
 		context "when dead cell has three alive neighbours" do
-			it "should set the dead cell to alive" do
+			it "should return true" do
 				set_some_neighbours_alive(cell, 3)
-				@game.deadOrAlive(cell)
-				expect(cell.state).to eq(true)
+				expect(@game.deadOrAlive(cell)).to eq(true)
 			end
 		end
 
-		# TODO: could not go RED, GREEN, REFACTOR because this test will
-		# not fail first (since cell is already dead)
 		context "when dead cell has less than three alive neighbours" do
 			it "should not set the dead cell to alive" do
 				set_some_neighbours_alive(cell, 2)
-				@game.deadOrAlive(cell)
-				expect(cell.state).to eq(false)
+				expect(@game.deadOrAlive(cell)).to eq(false)
 			end
 		end
 
@@ -139,8 +147,7 @@ describe Game do
 			it "should set the alive cell to dead" do
 				set_some_neighbours_alive(cell, 4)
 				cell.state = true
-				@game.deadOrAlive(cell)
-				expect(cell.state).to eq(false)
+				expect(@game.deadOrAlive(cell)).to eq(false)
 			end
 		end
 
@@ -148,8 +155,7 @@ describe Game do
 			it "should set the alive cell to dead" do
 				set_some_neighbours_alive(cell, 1)
 				cell.state = true
-				@game.deadOrAlive(cell)
-				expect(cell.state).to eq(false)
+				expect(@game.deadOrAlive(cell)).to eq(false)
 			end
 		end
 	end

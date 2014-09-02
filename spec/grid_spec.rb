@@ -54,11 +54,20 @@ describe Grid do
 		end
 
 		it "contains only nil values" do
-			grid.matrix.each do | row |
-				row.each do | element |
-					expect(element).to eq(nil)
-				end
+			grid.iterate! do | element |
+				expect(element).to eq(nil)
 			end
+		end
+	end
+
+	describe "#iterate!" do
+		it "should iterate over all element in matrix" do
+			count = 0
+			grid.iterate! do | counting |
+				count += 1
+			end
+			expect(count).to eq(grid.rows * grid.columns)
+			puts count
 		end
 	end
 

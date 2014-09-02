@@ -28,9 +28,27 @@ class Grid
 		return matrix
 	end
 
+	def iterate!
+
+		@matrix.each_with_index do | row, i |
+			row.each_with_index do | column, j |
+				@matrix[i][j] = yield(column)
+			end
+		end
+	end
+
+	def iterate
+
+		@matrix.each do | row |
+			row.each do | column |
+				yield(column)
+			end
+		end
+	end
+
 	def getElement(x, y)
 
-		return @matrix[x][y]
+		return @matrix[toroidalRow(x)][toroidalColumn(y)]
 	end
 
 	def toroidalRow(x)
