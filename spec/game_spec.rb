@@ -4,16 +4,15 @@ require_relative 'spec_helper.rb'
 
 describe Game do
 
-	before :each do
-		@game = Game.new()
-	end
-
-	let (:grid) {@game.instance_variable_get(:@grid)}
-	let (:matrix) {@game.instance_variable_get(:@grid).matrix}
-	let (:cell) { @game.getCell(0, 0) }
+	let (:rows) { 15 }
+	let (:columns) { 15 }
+	let (:game) { game = Game.new(rows, columns) }
+	let (:grid) {game.instance_variable_get(:@grid)}
+	let (:matrix) {game.instance_variable_get(:@grid).matrix}
+	let (:cell) { game.getCell(0, 0) }
 	let (:block) {[[14, 14], [14, 0], [0, 14], [0, 0]]}
 
-	subject { @game }
+	subject { game }
 
 	describe "#new" do
 		it { should be_a Game }
@@ -22,6 +21,20 @@ describe Game do
 	describe "#grid" do
 		it "should be a Grid" do
 			expect(grid).to be_a Grid
+		end
+	end
+
+	describe "#rows" do
+		its(:rows) { should eq(rows) }
+	end
+
+	describe "#columns" do
+		its(:columns) { should eq(columns) }
+	end
+
+	describe "#getMatrix" do
+		it "should return the Grid's matrix" do
+			expect(game.getMatrix).to eq(matrix)
 		end
 	end
 
@@ -49,14 +62,14 @@ describe Game do
 	describe "#loadPattern" do
 		context "when coordinates supplied are outside the grid" do
 			it "should wrap coordinates" do
-				@game.loadPattern([[grid.rows, grid.columns]])
-				expect(@game.getCell(0, 0).state).to eq(true)
+				game.loadPattern([[grid.rows, grid.columns]])
+				expect(game.getCell(0, 0).state).to eq(true)
 			end
 		end
 
 		context "when multiple coordinates are supplied" do
 			it "should set each cell to alive" do
-				@game.loadPattern(block)
+				game.loadPattern(block)
 				grid.iterate do | cell |
 					if block.include? [cell.row, cell.column]
 						expect(cell.state).to eq(true)
@@ -73,7 +86,7 @@ describe Game do
 
 		context "when no cells are alive" do
 			it "should not set any cells to alive" do
-				@game.turn
+				game.turn
 				grid.iterate do | cell |
 					expect(cell.state).to eq(false)
 				end
@@ -83,8 +96,8 @@ describe Game do
 		context "when pattern is stable" do
 			it "all cells in pattern should live" do
 				count = 0
-				@game.loadPattern(block)
-				100.times { @game.turn }
+				game.loadPattern(block)
+				100.times { game.turn }
 				grid.iterate do | cell |
 					count += 1 if cell.state
 				end
@@ -95,8 +108,8 @@ describe Game do
 		context "when pattern is unstable" do
 			it "all cells in pattern should die" do
 				count = 0
-				@game.loadPattern(unstable)
-				1.times { @game.turn }
+				game.loadPattern(unstable)
+				1.times { game.turn }
 				grid.iterate do | cell |
 					count += 1 if cell.state
 				end
@@ -108,22 +121,22 @@ describe Game do
 	describe "#getCell" do
 		
 		it "should return a Cell" do
-			expect(@game.getCell(0, 0)).to be_kind_of(Cell)
+			expect(game.getCell(0, 0)).to be_kind_of(Cell)
 		end
 
 		it "should have the correct row coordinate" do
-			expect(@game.getCell(0, 0).row).to eq(0)
+			expect(game.getCell(0, 0).row).to eq(0)
 		end
 
 		it "should have the correct column coordinate" do
-			expect(@game.getCell(0, 0).column).to eq(0)
+			expect(game.getCell(0, 0).column).to eq(0)
 		end
 	end
 
 	describe "#deadOrAlive" do
 
 		def set_some_neighbours_alive(cell, numAlive)
-			neighbourList = @game.neighbours(cell)
+			neighbourList = game.neighbours(cell)
 			for i in 0...numAlive
 				neighbourList[i].state = true
 			end
@@ -132,14 +145,14 @@ describe Game do
 		context "when dead cell has three alive neighbours" do
 			it "should return true" do
 				set_some_neighbours_alive(cell, 3)
-				expect(@game.deadOrAlive(cell)).to eq(true)
+				expect(game.deadOrAlive(cell)).to eq(true)
 			end
 		end
 
 		context "when dead cell has less than three alive neighbours" do
 			it "should not set the dead cell to alive" do
 				set_some_neighbours_alive(cell, 2)
-				expect(@game.deadOrAlive(cell)).to eq(false)
+				expect(game.deadOrAlive(cell)).to eq(false)
 			end
 		end
 
@@ -147,7 +160,7 @@ describe Game do
 			it "should set the alive cell to dead" do
 				set_some_neighbours_alive(cell, 4)
 				cell.state = true
-				expect(@game.deadOrAlive(cell)).to eq(false)
+				expect(game.deadOrAlive(cell)).to eq(false)
 			end
 		end
 
@@ -155,14 +168,14 @@ describe Game do
 			it "should set the alive cell to dead" do
 				set_some_neighbours_alive(cell, 1)
 				cell.state = true
-				expect(@game.deadOrAlive(cell)).to eq(false)
+				expect(game.deadOrAlive(cell)).to eq(false)
 			end
 		end
 	end
 
 	describe "#neighbours" do
 		it "should return coordinates of neighbouring cells" do
-			neighbours = @game.neighbours(cell)
+			neighbours = game.neighbours(cell)
 			neighbours.each do | neighbour |
 				x = neighbour.row
 				y = neighbour.column

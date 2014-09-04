@@ -3,11 +3,13 @@ require_relative 'grid.rb'
 
 class Game
 
-	attr_reader :grid
+	attr_reader :grid, :rows, :columns
 
-	def initialize()
+	def initialize(rows, columns)
 
-		@grid = Grid.new(15, 15)
+		@rows = rows
+		@columns = columns
+		@grid = Grid.new(@rows, @columns)
 		populateGrid()
 	end
 
